@@ -39,6 +39,15 @@ PROFILES: dict[str, FioProfile] = {
         direct=True,
         runtime=30,
     ),
+    "background_backup": FioProfile(
+        name="background_backup",
+        rw="write",
+        bs="1m",
+        iodepth=8,
+        numjobs=2,
+        direct=True,
+        runtime=30,
+    ),
 }
 
 def get_profile(name: str) -> FioProfile:
