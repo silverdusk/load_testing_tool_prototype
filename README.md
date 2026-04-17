@@ -22,7 +22,7 @@ fio --version
 - `main.py` — CLI
 - `profiles.py` — fio workload profiles
 - `runner.py` — fio command building and execution
-- `parser.py` — fio JSON parsing
+- `fio_parser.py` — fio JSON parsing
 - `report.py` — report formatting
 - `tests/` — minimal parser tests
 
