@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from parser import FioParseError, parse_fio_json
+from fio_parser import FioParseError, parse_fio_json
 from profiles import get_profile
 from report import format_full_report
 from runner import FioExecutionError, FioNotFoundError, run_profile, run_profiles_concurrently

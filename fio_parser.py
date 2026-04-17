@@ -105,7 +105,7 @@ def parse_fio_json(path: Path) -> ProfileMetrics:
         if not isinstance(job, dict):
             continue
 
-        if isinstance(job.get("jobname"), str):
+        if profile_name == str(path.stem) and isinstance(job.get("jobname"), str):
             profile_name = job["jobname"]
 
         read_section = job.get("read", {})

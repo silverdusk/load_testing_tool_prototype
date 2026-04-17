@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from parser import parse_fio_json
+import pytest
+
+from fio_parser import FioParseError, parse_fio_json
 
 
 def test_parse_fio_json_sums_read_and_write(tmp_path: Path) -> None:
@@ -81,3 +83,22 @@ def test_parse_fio_json_handles_read_only(tmp_path: Path) -> None:
     assert metrics.p95_ms == 0.5
     assert metrics.p99_ms == 0.9
     assert metrics.runtime_s == 10.0
+
+
+def test_parse_fio_json_missing_file(tmp_path: Path) -> None:
+    with pytest.raises(FioParseError, match="does not exist"):
+        parse_fio_json(tmp_path / "nonexistent.json")
+
+
+def test_parse_fio_json_malformed_json(tmp_path: Path) -> None:
+    bad_file = tmp_path / "bad.json"
+    bad_file.write_text("{ not valid json", encoding="utf-8")
+    with pytest.raises(FioParseError, match="Malformed"):
+        parse_fio_json(bad_file)
+
+
+def test_parse_fio_json_missing_jobs(tmp_path: Path) -> None:
+    empty_file = tmp_path / "empty.json"
+    empty_file.write_text(json.dumps({"fio version": "3.x", "jobs": []}), encoding="utf-8")
+    with pytest.raises(FioParseError, match="valid 'jobs' list"):
+        parse_fio_json(empty_file)

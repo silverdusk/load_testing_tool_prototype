@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from parser import ProfileMetrics
+from fio_parser import ProfileMetrics
 
 
 def _format_latency(value: float | None) -> str:
@@ -28,7 +28,7 @@ def format_combined_summary(metrics_list: list[ProfileMetrics]) -> str:
 
     Exact combined P95/P99 should not be derived from separate fio JSON
     summaries because percentiles are not safely aggregatable without more
-    detailed histogram-style data such as fio json+.
+    detailed histogram-style data such as fio JSON+.
     """
     total_throughput = sum(item.throughput_mib_s for item in metrics_list)
     total_iops = sum(item.iops for item in metrics_list)

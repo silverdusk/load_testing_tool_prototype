@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -18,10 +17,10 @@ class FioProfile:
     ioengine: str = "libaio"
     time_based: bool = True
     size: str = "1G"
-    rwmixread: Optional[int] = None
+    rwmixread: int | None = None
     group_reporting: bool = True
-    filename: Optional[str] = None
-    http_mode: Optional[str] = None
+    filename: str | None = None
+    http_mode: str | None = None
 
 PROFILES: dict[str, FioProfile] = {
     "oltp_like": FioProfile(
@@ -44,6 +43,8 @@ PROFILES: dict[str, FioProfile] = {
         direct=True,
         runtime=30,
     ),
+    # Template only: requires --http-host, --http-s3-key-id, --http-s3-keyfile,
+    # and --http-s3-bucket which are not modeled here. Extend FioProfile before use.
     "streaming_s3_like": FioProfile(
         name="streaming-s3-like",
         ioengine="http",
@@ -54,7 +55,7 @@ PROFILES: dict[str, FioProfile] = {
         numjobs=16,
         direct=True,
         runtime=60,
-        group_reporting=True
+        group_reporting=True,
     ),
     "background_backup": FioProfile(
         name="background_backup",
@@ -66,6 +67,7 @@ PROFILES: dict[str, FioProfile] = {
         runtime=30,
     ),
 }
+
 
 def get_profile(name: str) -> FioProfile:
     """Return a predefined fio profile by name."""

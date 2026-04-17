@@ -73,7 +73,7 @@ def build_fio_command(
         f"--direct={1 if profile.direct else 0}",
         f"--runtime={effective_runtime}",
         "--time_based=1",
-        "--group_reporting=1",
+        f"--group_reporting={1 if profile.group_reporting else 0}",
         f"--ioengine={profile.ioengine}",
         f"--size={profile.size}",
         "--output-format=json",
@@ -82,6 +82,9 @@ def build_fio_command(
 
     if profile.rwmixread is not None:
         command.append(f"--rwmixread={profile.rwmixread}")
+
+    if profile.http_mode is not None:
+        command.append(f"--http-mode={profile.http_mode}")
 
     return command
 
@@ -93,7 +96,6 @@ def launch_profile(
     runtime: int | None = None,
 ) -> PendingRun:
     """Launch one fio process and return a handle that can be awaited later."""
-    ensure_fio_installed()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     json_path = output_dir / f"{profile.name}.json"
@@ -144,6 +146,7 @@ def collect_run(pending: PendingRun) -> RunResult:
 
 def run_profile(profile: FioProfile, target: Path, output_dir: Path, runtime: int | None = None) -> RunResult:
     """Run a single fio profile and return execution details."""
+    ensure_fio_installed()
     pending = launch_profile(profile, target, output_dir, runtime=runtime)
     return collect_run(pending)
 
@@ -170,6 +173,12 @@ def run_profiles_concurrently(
     pending1 = launch_profile(profile1, target1, output_dir, runtime=runtime)
     pending2 = launch_profile(profile2, target2, output_dir, runtime=runtime)
 
-    result1 = collect_run(pending1)
+    try:
+        result1 = collect_run(pending1)
+    except Exception:
+        pending2.process.terminate()
+        pending2.process.wait()
+        raise
+
     result2 = collect_run(pending2)
     return [result1, result2]
