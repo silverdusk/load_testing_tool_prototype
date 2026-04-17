@@ -13,10 +13,10 @@ def test_parse_fio_json_sums_read_and_write(tmp_path: Path) -> None:
         "jobs": [
             {
                 "jobname": "oltp_like",
-                "job_runtime": 30000,
                 "read": {
                     "bw": 1024,
                     "iops": 100.0,
+                    "runtime": 30000,
                     "clat_ns": {
                         "percentile": {
                             "95.000000": 2_000_000,
@@ -27,6 +27,7 @@ def test_parse_fio_json_sums_read_and_write(tmp_path: Path) -> None:
                 "write": {
                     "bw": 2048,
                     "iops": 200.0,
+                    "runtime": 28000,
                     "clat_ns": {
                         "percentile": {
                             "95.000000": 3_000_000,
@@ -56,10 +57,10 @@ def test_parse_fio_json_handles_read_only(tmp_path: Path) -> None:
         "jobs": [
             {
                 "jobname": "streaming_like",
-                "job_runtime": 10000,
                 "read": {
                     "bw": 4096,
                     "iops": 32.0,
+                    "runtime": 10000,
                     "clat_us": {
                         "percentile": {
                             "95.000000": 500.0,

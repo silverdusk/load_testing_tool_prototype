@@ -128,9 +128,12 @@ def parse_fio_json(path: Path) -> ProfileMetrics:
             p95_candidates.append(_extract_percentile_ms(write_section, "95.000000"))
             p99_candidates.append(_extract_percentile_ms(write_section, "99.000000"))
 
-        job_runtime = job.get("job_runtime")
-        if isinstance(job_runtime, (int, float)):
-            runtime_s = max(runtime_s or 0.0, float(job_runtime) / 1000.0)  # job_runtime is in milliseconds
+        # runtime is stored per I/O direction in milliseconds; take the max of both directions
+        read_runtime_ms = _safe_get_number(read_section, "runtime")
+        write_runtime_ms = _safe_get_number(write_section, "runtime")
+        job_runtime_ms = max(read_runtime_ms, write_runtime_ms)
+        if job_runtime_ms > 0:
+            runtime_s = max(runtime_s or 0.0, job_runtime_ms / 1000.0)
 
     return ProfileMetrics(
         profile_name=profile_name,
