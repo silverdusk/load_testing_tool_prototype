@@ -72,12 +72,12 @@ def build_fio_command(
         f"--numjobs={profile.numjobs}",
         f"--direct={1 if profile.direct else 0}",
         f"--runtime={effective_runtime}",
-        "--time_based=1",
-        f"--group_reporting={1 if profile.group_reporting else 0}",
+        "--time_based=1",                                        # run for fixed duration, not until size is consumed
+        f"--group_reporting={1 if profile.group_reporting else 0}",  # merge per-job stats into one summary row
         f"--ioengine={profile.ioengine}",
         f"--size={profile.size}",
-        "--output-format=json",
-        f"--output={output_json}",
+        "--output-format=json",                                  # machine-readable output for parsing
+        f"--output={output_json}",                               # write JSON to file, not stdout
     ]
 
     if profile.rwmixread is not None:

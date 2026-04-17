@@ -46,6 +46,10 @@ def _extract_percentile_ms(io_section: dict[str, Any], percentile_key: str) -> f
 
     Exact JSON structure can vary by fio version.
     """
+    # fio changed the latency field name and unit across versions:
+    # clat_ns (nanoseconds)  — fio >= 3.x default
+    # clat_us (microseconds) — some older builds or non-default configs
+    # clat_ms (milliseconds) — rare; included for completeness
     latency_fields = [
         ("clat_ns", 1_000_000.0),
         ("clat_us", 1_000.0),
@@ -112,20 +116,21 @@ def parse_fio_json(path: Path) -> ProfileMetrics:
         write_section = job.get("write", {})
 
         if isinstance(read_section, dict):
-            total_bw_kib_s += _safe_get_number(read_section, "bw")
+            total_bw_kib_s += _safe_get_number(read_section, "bw")   # fio reports bw in KiB/s
             total_iops += _safe_get_number(read_section, "iops")
+            # percentile keys are zero-padded float strings as fio serializes them
             p95_candidates.append(_extract_percentile_ms(read_section, "95.000000"))
             p99_candidates.append(_extract_percentile_ms(read_section, "99.000000"))
 
         if isinstance(write_section, dict):
-            total_bw_kib_s += _safe_get_number(write_section, "bw")
+            total_bw_kib_s += _safe_get_number(write_section, "bw")  # fio reports bw in KiB/s
             total_iops += _safe_get_number(write_section, "iops")
             p95_candidates.append(_extract_percentile_ms(write_section, "95.000000"))
             p99_candidates.append(_extract_percentile_ms(write_section, "99.000000"))
 
         job_runtime = job.get("job_runtime")
         if isinstance(job_runtime, (int, float)):
-            runtime_s = max(runtime_s or 0.0, float(job_runtime) / 1000.0)
+            runtime_s = max(runtime_s or 0.0, float(job_runtime) / 1000.0)  # job_runtime is in milliseconds
 
     return ProfileMetrics(
         profile_name=profile_name,
