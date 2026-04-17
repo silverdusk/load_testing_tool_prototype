@@ -46,5 +46,6 @@ def format_combined_summary(metrics_list: list[ProfileMetrics]) -> str:
 def format_full_report(metrics_list: list[ProfileMetrics]) -> str:
     """Format the final report shown in the console."""
     sections = [format_profile_summary(item) for item in metrics_list]
-    sections.append(format_combined_summary(metrics_list))
+    if len(metrics_list) > 1:
+        sections.append(format_combined_summary(metrics_list))
     return "\n\n".join(sections)
