@@ -14,7 +14,7 @@ class FioProfile:
     numjobs: int
     direct: bool
     runtime: int
-    ioengine: str = "libaio"
+    ioengine: str = "posixaio"  # posixaio works on macOS and Linux; use libaio or io_uring on Linux for lower overhead
     time_based: bool = True
     size: str = "1G"
     rwmixread: int | None = None
@@ -25,7 +25,7 @@ class FioProfile:
 PROFILES: dict[str, FioProfile] = {
     "oltp_like": FioProfile(
         name="oltp-like",
-        ioengine="libaio",   # async I/O engine; io_uring is a modern alternative on Linux 5.1+
+        ioengine="posixaio", # posixaio works on macOS and Linux; prefer libaio or io_uring on Linux-only deployments
         rw="randrw",         # random mixed read/write simulates unpredictable DB access patterns
         rwmixread=70,        # 70% reads / 30% writes — typical OLTP ratio; fio default is 50%
         bs="4k",             # matches common database page size; small blocks stress IOPS over throughput
