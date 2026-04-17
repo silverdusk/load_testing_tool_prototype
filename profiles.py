@@ -9,20 +9,19 @@ class FioProfile:
     """Definition of fio workload profile."""
 
     name: str
-    ioengine: str
-    http_mode: str
     rw: str
     bs: str
     iodepth: int
     numjobs: int
     direct: bool
-    time_based: bool
     runtime: int
     ioengine: str = "libaio"
+    time_based: bool = True
     size: str = "1G"
     rwmixread: Optional[int] = None
-    group_reporting: bool = False
+    group_reporting: bool = True
     filename: Optional[str] = None
+    http_mode: Optional[str] = None
 
 PROFILES: dict[str, FioProfile] = {
     "oltp_like": FioProfile(
@@ -33,7 +32,7 @@ PROFILES: dict[str, FioProfile] = {
         bs="4k", # The block size in bytes used for I/O units. Small transactions I/O
         iodepth=16, # queue depth per job for async testing
         numjobs=4, # number of parallel threads
-        direct=1, # to bypass Page cache and measure real storage
+        direct=True, # to bypass Page cache and measure real storage
         runtime=30,
     ),
     "streaming_like": FioProfile(
@@ -42,20 +41,20 @@ PROFILES: dict[str, FioProfile] = {
         bs="1m", # bigger blocks than for OLTP
         iodepth=8,
         numjobs=2,
-        direct=1,
+        direct=True,
         runtime=30,
     ),
     "streaming_s3_like": FioProfile(
         name="streaming-s3-like",
-        ioengine=http,
-        http_mode=s3,
-        direct=1,
+        ioengine="http",
+        http_mode="s3",
         rw="read",
         bs="1m",
+        iodepth=1,
         numjobs=16,
-        time_based=1,
+        direct=True,
         runtime=60,
-        group_reporting=1
+        group_reporting=True
     ),
     "background_backup": FioProfile(
         name="background_backup",
@@ -63,7 +62,7 @@ PROFILES: dict[str, FioProfile] = {
         bs="1m",
         iodepth=8,
         numjobs=2,
-        direct=1,
+        direct=True,
         runtime=30,
     ),
 }
