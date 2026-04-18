@@ -87,12 +87,12 @@ def build_fio_command(
         f"--numjobs={profile.numjobs}",
         f"--direct={1 if profile.direct else 0}",
         f"--runtime={effective_runtime}",
-        "--time_based=1",                                        # run for fixed duration, not until size is consumed
-        f"--group_reporting={1 if profile.group_reporting else 0}",  # merge per-job stats into one summary row
+        "--time_based=1",  # run for fixed duration, not until size is consumed
+        f"--group_reporting={1 if profile.group_reporting else 0}",  # merge per-job stats
         f"--ioengine={profile.ioengine}",
         f"--size={profile.size}",
-        "--output-format=json",                                  # machine-readable output for parsing
-        f"--output={output_json}",                               # write JSON to file, not stdout
+        "--output-format=json",  # machine-readable output for parsing
+        f"--output={output_json}",  # write JSON to file, not stdout
     ]
 
     if profile.rwmixread is not None:
@@ -211,9 +211,13 @@ def run_profiles_concurrently(
 
     logger.info("Launching concurrent profiles: '%s' and '%s'", profile1.name, profile2.name)
 
-    pending1 = launch_profile(profile1, target1, output_dir, runtime=runtime, run_id=effective_run_id)
+    pending1 = launch_profile(
+        profile1, target1, output_dir, runtime=runtime, run_id=effective_run_id
+    )
     try:
-        pending2 = launch_profile(profile2, target2, output_dir, runtime=runtime, run_id=effective_run_id)
+        pending2 = launch_profile(
+            profile2, target2, output_dir, runtime=runtime, run_id=effective_run_id
+        )
     except Exception:
         logger.debug("Terminating '%s' after failure to launch sibling", pending1.profile_name)
         _terminate_process(pending1)

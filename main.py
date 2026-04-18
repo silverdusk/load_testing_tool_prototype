@@ -14,7 +14,7 @@ from runner import (
     FioNotFoundError,
     make_run_id,
     run_profile,
-    run_profiles_concurrently
+    run_profiles_concurrently,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,8 +42,12 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser = subparsers.add_parser("run", help="Run a single fio profile.")
     run_parser.add_argument("--profile", required=True, help="Profile name.")
     run_parser.add_argument("--target", required=True, help="Target file path.")
-    run_parser.add_argument("--runtime", type=int, default=None, help="Override runtime in seconds.")
-    run_parser.add_argument("--output-dir", default="results", help="Directory for fio JSON output.")
+    run_parser.add_argument(
+        "--runtime", type=int, default=None, help="Override runtime in seconds."
+    )
+    run_parser.add_argument(
+        "--output-dir", default="results", help="Directory for fio JSON output."
+    )
     run_parser.add_argument(
         "--write-summary-json",
         action="store_true",
@@ -58,8 +62,12 @@ def build_parser() -> argparse.ArgumentParser:
     concurrent_parser.add_argument("--profile1", required=True, help="First profile name.")
     concurrent_parser.add_argument("--profile2", required=True, help="Second profile name.")
     concurrent_parser.add_argument("--target", required=True, help="Base target file path.")
-    concurrent_parser.add_argument("--runtime", type=int, default=None, help="Override runtime in seconds.")
-    concurrent_parser.add_argument("--output-dir", default="results", help="Directory for fio JSON output.")
+    concurrent_parser.add_argument(
+        "--runtime", type=int, default=None, help="Override runtime in seconds."
+    )
+    concurrent_parser.add_argument(
+        "--output-dir", default="results", help="Directory for fio JSON output."
+    )
     concurrent_parser.add_argument(
         "--write-summary-json",
         action="store_true",

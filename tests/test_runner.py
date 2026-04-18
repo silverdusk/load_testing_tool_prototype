@@ -5,7 +5,6 @@ from pathlib import Path
 from profiles import PROFILES
 from runner import build_fio_command, build_output_json_path
 
-
 _OLTP = PROFILES["oltp_like"]
 _STREAMING = PROFILES["streaming_like"]
 

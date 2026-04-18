@@ -14,7 +14,7 @@ class FioProfile:
     numjobs: int
     direct: bool
     runtime: int
-    ioengine: str = "posixaio"  # posixaio works on macOS and Linux; use libaio or io_uring on Linux for lower overhead
+    ioengine: str = "posixaio"  # posixaio works on macOS and Linux; prefer libaio/io_uring on Linux
     time_based: bool = True
     size: str = "1G"
     rwmixread: int | None = None
@@ -23,11 +23,11 @@ class FioProfile:
 PROFILES: dict[str, FioProfile] = {
     "oltp_like": FioProfile(
         name="oltp-like",
-        ioengine="posixaio", # posixaio works on macOS and Linux; prefer libaio or io_uring on Linux-only deployments
+        ioengine="posixaio", # posixaio works on macOS and Linux; prefer libaio/io_uring on Linux
         rw="randrw",         # random mixed read/write simulates unpredictable DB access patterns
         rwmixread=70,        # 70% reads / 30% writes — typical OLTP ratio; fio default is 50%
-        bs="4k",             # matches common database page size; small blocks stress IOPS over throughput
-        iodepth=16,          # outstanding I/O requests per job; higher depth exercises async I/O scheduling
+        bs="4k",             # matches common DB page size; small blocks stress IOPS over throughput
+        iodepth=16,          # outstanding I/O requests per job; higher depth exercises async I/O
         numjobs=4,           # parallel workers simulating concurrent DB sessions
         direct=True,         # bypass page cache to measure raw storage latency, not OS buffer speed
         runtime=30,
@@ -35,7 +35,7 @@ PROFILES: dict[str, FioProfile] = {
     "streaming_like": FioProfile(
         name="streaming-like",
         rw="read",           # sequential reads simulate continuous media delivery
-        bs="1m",             # large blocks maximize throughput; matches typical streaming chunk size
+        bs="1m",             # large blocks maximize throughput; typical streaming chunk size
         iodepth=8,           # enough depth to keep the read pipeline full without over-queuing
         numjobs=2,           # two parallel readers simulate concurrent stream clients
         direct=True,         # bypass page cache for accurate storage throughput measurement
@@ -44,10 +44,10 @@ PROFILES: dict[str, FioProfile] = {
     "background_backup": FioProfile(
         name="background_backup",
         rw="write",          # sequential writes simulate a backup stream writing data continuously
-        bs="1m",             # large blocks reduce IOPS pressure; optimized for throughput not latency
-        iodepth=8,           # moderate depth keeps write pipeline full without starving foreground I/O
-        numjobs=2,           # two writers provide realistic backup concurrency without overwhelming storage
-        direct=True,         # bypass page cache so writes reach storage immediately, not delayed by writeback
+        bs="1m",             # large blocks reduce IOPS pressure; optimized for throughput
+        iodepth=8,           # moderate depth keeps write pipeline full without starvation
+        numjobs=2,           # two writers provide realistic backup concurrency
+        direct=True,         # bypass page cache so writes reach storage immediately
         runtime=30,
     ),
 }
