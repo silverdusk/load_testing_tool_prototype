@@ -9,7 +9,7 @@ help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
-	@echo "  test           Run parser tests with pytest"
+	@echo "  test           Run all tests with pytest"
 	@echo "  lint           Lint source files with ruff"
 	@echo "  run            Run a single oltp_like profile"
 	@echo "  run-concurrent Run streaming_like + background_backup concurrently"

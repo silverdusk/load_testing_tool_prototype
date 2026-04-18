@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import pytest
 
-from main import _validate_common_args
+from main import _validate_common_args, handle_run_concurrent
 from profiles import get_profile
 
 
@@ -36,6 +37,20 @@ class TestValidateCommonArgs:
         existing_file.write_text("x", encoding="utf-8")
         with pytest.raises(ValueError, match="not a directory"):
             _validate_common_args(tmp_path / "test.dat", existing_file, runtime=None)
+
+
+class TestHandleRunConcurrent:
+    def test_rejects_duplicate_profiles(self, tmp_path: Path) -> None:
+        args = argparse.Namespace(
+            profile1="streaming_like",
+            profile2="streaming_like",
+            target=str(tmp_path / "test.dat"),
+            output_dir=str(tmp_path),
+            runtime=None,
+            write_summary_json=False,
+        )
+        with pytest.raises(ValueError, match="must be different"):
+            handle_run_concurrent(args)
 
 
 class TestGetProfile:

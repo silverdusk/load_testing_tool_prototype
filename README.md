@@ -26,6 +26,12 @@ fio --version
 - `report.py` — report formatting
 - `tests/` — minimal parser tests
 
+## Profiles
+
+- `oltp_like` — random mixed read/write, small blocks, direct I/O
+- `streaming_like` — sequential reads, larger blocks, multiple jobs 
+- `background_backup` — sequential write workload intended for concurrent execution
+
 ## Makefile shortcuts
 
 Common workflows are available via `make`:
@@ -90,15 +96,9 @@ python main.py run-concurrent \
 ```
 
 This can produce files such as:
-- `streaming_like_20260418_120000.json`
+- `streaming-like_20260418_120000.json`
 - `background_backup_20260418_120000.json`
 - `summary_20260418_120000.json`
-
-## Profiles
-
-- `oltp_like` — random mixed read/write, small blocks, direct I/O
-- `streaming_like` — sequential reads, larger blocks, multiple jobs 
-- `background_backup` — sequential write workload intended for concurrent execution
 
 ## Report contents
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import logging
 import shutil
 import subprocess
@@ -101,13 +102,26 @@ def build_fio_command(
     return command
 
 
+_TERMINATE_TIMEOUT_S = 5
+
+
 def _terminate_process(pending: PendingRun) -> None:
-    """Terminate a running fio process and wait for it to exit."""
+    """Terminate a running fio process, escalating to SIGKILL if SIGTERM is not honored."""
     try:
         pending.process.terminate()
-        pending.process.wait()
     except OSError:
-        pass  # process already exited before terminate() reached it
+        return  # process already exited before terminate() reached it
+
+    try:
+        pending.process.wait(timeout=_TERMINATE_TIMEOUT_S)
+        logger.debug("Profile '%s' terminated after SIGTERM", pending.profile_name)
+    except subprocess.TimeoutExpired:
+        logger.debug("Profile '%s' ignored SIGTERM; sending SIGKILL", pending.profile_name)
+        try:
+            pending.process.kill()
+        except OSError:
+            pass  # exited in the window between timeout and kill
+        pending.process.wait()
 
 
 def launch_profile(
@@ -135,8 +149,12 @@ def launch_profile(
             text=True,
         )
     except OSError as exc:
-        raise FioNotFoundError(
-            f"Failed to start fio for profile '{profile.name}': {exc}"
+        if exc.errno == errno.ENOENT:
+            raise FioNotFoundError(
+                f"fio executable not found when launching profile '{profile.name}'"
+            ) from exc
+        raise FioExecutionError(
+            f"fio failed to start for profile '{profile.name}': {exc}"
         ) from exc
 
     return PendingRun(
@@ -153,8 +171,10 @@ def collect_run(pending: PendingRun) -> RunResult:
     returncode = pending.process.returncode
 
     if returncode != 0:
+        stderr_stripped = stderr.strip()
         logger.error("Profile '%s' failed with exit code %d", pending.profile_name, returncode)
-        logger.debug("fio stderr: %s", stderr.strip())
+        if stderr_stripped:
+            logger.error("fio stderr:\n%s", stderr_stripped)
         raise FioExecutionError(
             f"fio failed for profile '{pending.profile_name}' with exit code {returncode}"
         )
