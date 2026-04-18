@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from fio_parser import FioParseError, parse_fio_json
+from fio_parser import FioParseError, ProfileMetrics, parse_fio_json
+from report import build_summary_json_path, write_summary_json
 
 
 def test_parse_fio_json_sums_read_and_write(tmp_path: Path) -> None:
@@ -103,3 +104,60 @@ def test_parse_fio_json_missing_jobs(tmp_path: Path) -> None:
     empty_file.write_text(json.dumps({"fio version": "3.x", "jobs": []}), encoding="utf-8")
     with pytest.raises(FioParseError, match="valid 'jobs' list"):
         parse_fio_json(empty_file)
+
+
+def test_build_summary_json_path_includes_run_id(tmp_path: Path) -> None:
+    summary_path = build_summary_json_path(tmp_path, "20260418_120000")
+
+    assert summary_path == tmp_path / "summary_20260418_120000.json"
+
+
+def test_write_summary_json_creates_expected_payload(tmp_path: Path) -> None:
+    output_path = tmp_path / "summary_20260418_120000.json"
+
+    metrics_list = [
+        ProfileMetrics(
+            profile_name="streaming-like",
+            throughput_mib_s=2110.62,
+            iops=2110.62,
+            p95_ms=9.63,
+            p99_ms=11.99,
+            runtime_s=5.0,
+        ),
+        ProfileMetrics(
+            profile_name="background_backup",
+            throughput_mib_s=719.69,
+            iops=719.69,
+            p95_ms=43.25,
+            p99_ms=90.70,
+            runtime_s=5.2,
+        ),
+    ]
+
+    source_json_paths = [
+        Path("streaming-like_20260418_120000.json"),
+        Path("background_backup_20260418_120000.json"),
+    ]
+
+    write_summary_json(
+        metrics_list=metrics_list,
+        output_path=output_path,
+        mode="concurrent",
+        source_json_paths=source_json_paths,
+    )
+
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+
+    assert payload["mode"] == "concurrent"
+    assert payload["profiles"] == ["streaming-like", "background_backup"]
+
+    assert payload["combined"]["total_throughput_mib_s"] == 2830.31
+    assert payload["combined"]["total_iops"] == 2830.31
+
+    assert payload["per_profile"][0]["profile_name"] == "streaming-like"
+    assert payload["per_profile"][0]["source_json"] == "streaming-like_20260418_120000.json"
+
+    assert payload["per_profile"][1]["profile_name"] == "background_backup"
+    assert payload["per_profile"][1]["source_json"] == "background_backup_20260418_120000.json"
+
+    assert payload["note"] is not None

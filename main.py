@@ -37,7 +37,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run two fio profiles simultaneously.",
     )
 
-    # concurrent_parser = subparsers.add_parser("run-concurrent", help="Run two fio profiles simultaneously.")
     concurrent_parser.add_argument("--profile1", required=True, help="First profile name.")
     concurrent_parser.add_argument("--profile2", required=True, help="Second profile name.")
     concurrent_parser.add_argument("--target", required=True, help="Base target file path.")

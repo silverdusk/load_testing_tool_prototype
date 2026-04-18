@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from datetime import datetime
@@ -38,6 +37,17 @@ class PendingRun:
     command: list[str]
     process: subprocess.Popen[str]
     json_path: Path
+
+
+def make_run_id() -> str:
+    """Return a timestamp identifier shared by all files of one application run."""
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+def build_output_json_path(output_dir: Path, profile_name: str, run_id: str) -> Path:
+    """Build a timestamped fio JSON output path."""
+    safe_name = profile_name.replace(" ", "_")
+    return output_dir / f"{safe_name}_{run_id}.json"
 
 
 def ensure_fio_installed() -> None:
@@ -149,11 +159,11 @@ def collect_run(pending: PendingRun) -> RunResult:
 
 
 def run_profile(
-        profile: FioProfile,
-        target: Path,
-        output_dir: Path,
-        runtime: int | None = None,
-        run_id: str | None = None
+    profile: FioProfile,
+    target: Path,
+    output_dir: Path,
+    runtime: int | None = None,
+    run_id: str | None = None,
 ) -> RunResult:
     """Run a single fio profile and return execution details."""
     ensure_fio_installed()
@@ -194,12 +204,3 @@ def run_profiles_concurrently(
 
     result2 = collect_run(pending2)
     return [result1, result2]
-
-def make_run_id() -> str:
-    """Return a timestamp identifier shared by all files of one application run."""
-    return datetime.now().strftime("%Y%m%d_%H%M%S")
-
-def build_output_json_path(output_dir: Path, profile_name: str, run_id: str) -> Path:
-    """Build a timestamped fio JSON output path."""
-    safe_name = profile_name.replace(" ", "_")
-    return output_dir / f"{safe_name}_{run_id}.json"

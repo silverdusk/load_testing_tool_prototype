@@ -30,21 +30,44 @@ fio --version
 
 Run one profile:
 
-```Bash
+```bash
 python main.py run --profile oltp_like --target ./fio_testfile.dat
 ```
 
 Run one profile with a custom runtime and output directory:
 
-```Bash
+```bash
 python main.py run --profile streaming_like --target ./fio_testfile.dat --runtime 60 --output-dir ./results
 ```
 
 Run two profiles concurrently:
 
-```Bash
+```bash
 python main.py run-concurrent --profile1 streaming_like --profile2 background_backup --target ./fio_testfile.dat
 ```
+
+## Output files
+
+fio JSON outputs are timestamped to avoid overwriting previous runs.
+
+Use `--write-summary-json` to write an additional app-generated summary JSON file.
+
+Example:
+
+```bash
+python main.py run-concurrent \
+  --profile1 streaming_like \
+  --profile2 background_backup \
+  --target ./fio_testfile.dat \
+  --runtime 5 \
+  --output-dir ./results \
+  --write-summary-json
+```
+
+This can produce files such as:
+- `streaming-like_20260418_120000.json`
+- `background_backup_20260418_120000.json`
+- `summary_20260418_120000.json`
 
 ## Profiles
 

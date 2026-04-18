@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 from fio_parser import ProfileMetrics
 
@@ -13,6 +14,7 @@ PERCENTILE_NOTE = (
     "histogram-style data such as json+."
 )
 
+
 def build_summary_json_path(output_dir: Path, run_id: str) -> Path:
     """Build a timestamped summary JSON path."""
     return output_dir / f"summary_{run_id}.json"
@@ -21,7 +23,7 @@ def build_summary_json_path(output_dir: Path, run_id: str) -> Path:
 def write_summary_json(
     metrics_list: list[ProfileMetrics],
     output_path: Path,
-    mode: str,
+    mode: Literal["single", "concurrent"],
     source_json_paths: list[Path] | None = None,
 ) -> None:
     """Write app-generated summary JSON."""
@@ -42,17 +44,19 @@ def write_summary_json(
             item["source_json"] = source_names[index]
         per_profile.append(item)
 
-    payload = {
+    payload: dict = {
         "mode": mode,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "profiles": [m.profile_name for m in metrics_list],
         "per_profile": per_profile,
-        "combined": {
+    }
+
+    if len(metrics_list) > 1:
+        payload["combined"] = {
             "total_throughput_mib_s": round(sum(m.throughput_mib_s for m in metrics_list), 2),
             "total_iops": round(sum(m.iops for m in metrics_list), 2),
-        },
-        "note": PERCENTILE_NOTE if len(metrics_list) > 1 else None,
-    }
+        }
+        payload["note"] = PERCENTILE_NOTE
 
     output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
