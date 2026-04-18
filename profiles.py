@@ -19,8 +19,6 @@ class FioProfile:
     size: str = "1G"
     rwmixread: int | None = None
     group_reporting: bool = True
-    filename: str | None = None
-    http_mode: str | None = None
 
 PROFILES: dict[str, FioProfile] = {
     "oltp_like": FioProfile(
@@ -42,20 +40,6 @@ PROFILES: dict[str, FioProfile] = {
         numjobs=2,           # two parallel readers simulate concurrent stream clients
         direct=True,         # bypass page cache for accurate storage throughput measurement
         runtime=30,
-    ),
-    # Template only: requires --http-host, --http-s3-key-id, --http-s3-keyfile,
-    # and --http-s3-bucket which are not modeled here. Extend FioProfile before use.
-    "streaming_s3_like": FioProfile(
-        name="streaming-s3-like",
-        ioengine="http",     # fio HTTP engine issues requests over TCP; used to benchmark S3-compatible APIs
-        http_mode="s3",      # enables S3 request signing and path format
-        rw="read",
-        bs="1m",             # large object reads typical for S3 media or backup workloads
-        iodepth=1,           # HTTP engine is synchronous per job; concurrency comes from numjobs
-        numjobs=16,          # high job count compensates for iodepth=1 to saturate the network path
-        direct=True,
-        runtime=60,
-        group_reporting=True,
     ),
     "background_backup": FioProfile(
         name="background_backup",

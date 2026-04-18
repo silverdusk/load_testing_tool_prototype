@@ -98,9 +98,6 @@ def build_fio_command(
     if profile.rwmixread is not None:
         command.append(f"--rwmixread={profile.rwmixread}")
 
-    if profile.http_mode is not None:
-        command.append(f"--http-mode={profile.http_mode}")
-
     return command
 
 
