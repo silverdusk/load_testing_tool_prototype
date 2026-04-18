@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from enum import IntEnum
 from pathlib import Path
 
 from fio_parser import FioParseError, parse_fio_json
@@ -17,6 +18,15 @@ from runner import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ExitCode(IntEnum):
+    SUCCESS = 0
+    INTERNAL_ERROR = 1
+    ARGUMENT_ERROR = 2   # consistent with argparse default for bad arguments
+    FIO_NOT_FOUND = 3
+    FIO_EXECUTION_FAILED = 4
+    PARSE_FAILED = 5
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -59,7 +69,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def handle_run(args: argparse.Namespace) -> int:
+def handle_run(args: argparse.Namespace) -> ExitCode:
     """Handle single-profile execution."""
     profile = get_profile(args.profile)
     output_dir = Path(args.output_dir)
@@ -83,10 +93,10 @@ def handle_run(args: argparse.Namespace) -> int:
             mode="single",
             source_json_paths=[result.json_path],
         )
-    return 0
+    return ExitCode.SUCCESS
 
 
-def handle_run_concurrent(args: argparse.Namespace) -> int:
+def handle_run_concurrent(args: argparse.Namespace) -> ExitCode:
     """Handle concurrent two-profile execution."""
     profile1 = get_profile(args.profile1)
     profile2 = get_profile(args.profile2)
@@ -113,10 +123,10 @@ def handle_run_concurrent(args: argparse.Namespace) -> int:
             mode="concurrent",
             source_json_paths=[result.json_path for result in results],
         )
-    return 0
+    return ExitCode.SUCCESS
 
 
-def main() -> int:
+def main() -> ExitCode:
     """CLI entry point."""
     parser = build_parser()
     args = parser.parse_args()
@@ -132,12 +142,24 @@ def main() -> int:
             return handle_run(args)
         if args.command == "run-concurrent":
             return handle_run_concurrent(args)
-    except (ValueError, FioNotFoundError, FioExecutionError, FioParseError) as exc:
+    except ValueError as exc:
         logger.error("%s", exc)
-        return 1
+        return ExitCode.ARGUMENT_ERROR
+    except FioNotFoundError as exc:
+        logger.error("%s", exc)
+        return ExitCode.FIO_NOT_FOUND
+    except FioExecutionError as exc:
+        logger.error("%s", exc)
+        return ExitCode.FIO_EXECUTION_FAILED
+    except FioParseError as exc:
+        logger.error("%s", exc)
+        return ExitCode.PARSE_FAILED
+    except Exception as exc:
+        logger.error("Unexpected error: %s", exc)
+        return ExitCode.INTERNAL_ERROR
 
     logger.error("Unknown command: %s", args.command)
-    return 1
+    return ExitCode.INTERNAL_ERROR
 
 
 if __name__ == "__main__":

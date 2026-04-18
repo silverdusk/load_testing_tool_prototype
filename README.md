@@ -100,6 +100,17 @@ Exact combined P95/P99 for two separate fio JSON summaries are not shown.
 
 Reason: percentiles cannot be aggregated correctly from already summarized outputs alone. Exact combined latency percentiles would require more detailed histogram-style data, for example fio `json+`.
 
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | Unexpected internal error |
+| 2 | Invalid argument (e.g. unknown profile name) |
+| 3 | fio not found in PATH |
+| 4 | fio process failed (non-zero exit) |
+| 5 | fio JSON output could not be parsed |
+
 ## Notes
 - The exact fio JSON structure may vary slightly by fio version.
 - This prototype prioritizes clarity and correctness over advanced architecture.
