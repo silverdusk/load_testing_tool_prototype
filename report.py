@@ -1,6 +1,60 @@
 from __future__ import annotations
 
+import json
+from datetime import datetime
+from pathlib import Path
+
 from fio_parser import ProfileMetrics
+
+
+PERCENTILE_NOTE = (
+    "Exact combined P95/P99 are not shown because they cannot be calculated correctly "
+    "from separate fio JSON summaries alone. Exact aggregation would require "
+    "histogram-style data such as json+."
+)
+
+def build_summary_json_path(output_dir: Path, run_id: str) -> Path:
+    """Build a timestamped summary JSON path."""
+    return output_dir / f"summary_{run_id}.json"
+
+
+def write_summary_json(
+    metrics_list: list[ProfileMetrics],
+    output_path: Path,
+    mode: str,
+    source_json_paths: list[Path] | None = None,
+) -> None:
+    """Write app-generated summary JSON."""
+    per_profile = []
+
+    source_names = [p.name for p in source_json_paths] if source_json_paths else []
+
+    for index, metrics in enumerate(metrics_list):
+        item = {
+            "profile_name": metrics.profile_name,
+            "throughput_mib_s": round(metrics.throughput_mib_s, 2),
+            "iops": round(metrics.iops, 2),
+            "p95_ms": round(metrics.p95_ms, 2) if metrics.p95_ms is not None else None,
+            "p99_ms": round(metrics.p99_ms, 2) if metrics.p99_ms is not None else None,
+            "runtime_s": round(metrics.runtime_s, 2) if metrics.runtime_s is not None else None,
+        }
+        if index < len(source_names):
+            item["source_json"] = source_names[index]
+        per_profile.append(item)
+
+    payload = {
+        "mode": mode,
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "profiles": [m.profile_name for m in metrics_list],
+        "per_profile": per_profile,
+        "combined": {
+            "total_throughput_mib_s": round(sum(m.throughput_mib_s for m in metrics_list), 2),
+            "total_iops": round(sum(m.iops for m in metrics_list), 2),
+        },
+        "note": PERCENTILE_NOTE if len(metrics_list) > 1 else None,
+    }
+
+    output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def _format_latency(value: float | None) -> str:
