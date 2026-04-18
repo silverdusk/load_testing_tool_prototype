@@ -46,6 +46,12 @@ Run two profiles concurrently:
 python main.py run-concurrent --profile1 streaming_like --profile2 background_backup --target ./fio_testfile.dat
 ```
 
+Enable verbose logging (shows fio command, stderr, and parsing details):
+
+```bash
+python main.py --verbose run --profile oltp_like --target ./fio_testfile.dat
+```
+
 ## Output files
 
 fio JSON outputs are timestamped to avoid overwriting previous runs.
@@ -84,7 +90,7 @@ Per profile:
 - P99 latency
 - Runtime
 
-Combined:
+Combined (concurrent runs only):
 - Total throughput
 - Total IOPS
 

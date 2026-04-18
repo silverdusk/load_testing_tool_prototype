@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
 from fio_parser import ProfileMetrics
+
+logger = logging.getLogger(__name__)
 
 
 PERCENTILE_NOTE = (
@@ -59,6 +62,7 @@ def write_summary_json(
         payload["note"] = PERCENTILE_NOTE
 
     output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    logger.info("Summary JSON written: %s", output_path)
 
 
 def _format_latency(value: float | None) -> str:

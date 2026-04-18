@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class FioParseError(RuntimeError):
@@ -86,6 +89,8 @@ def parse_fio_json(path: Path) -> ProfileMetrics:
     P95/P99 are taken from available latency percentiles. If both read and write
     values exist, the larger one is used as a simple per-profile summary.
     """
+    logger.debug("Parsing fio JSON: %s", path)
+
     if not path.exists():
         raise FioParseError(f"fio JSON file does not exist: {path}")
 

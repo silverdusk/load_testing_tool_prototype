@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import logging
 import shutil
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from profiles import FioProfile
+
+logger = logging.getLogger(__name__)
 
 
 class FioNotFoundError(RuntimeError):
@@ -115,6 +118,9 @@ def launch_profile(
     json_path = build_output_json_path(output_dir, profile.name, effective_run_id)
     command = build_fio_command(profile, target, json_path, runtime=runtime)
 
+    logger.info("Launching fio profile '%s'", profile.name)
+    logger.debug("Command: %s", " ".join(command))
+
     process = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
@@ -144,9 +150,10 @@ def collect_run(pending: PendingRun) -> RunResult:
     )
 
     if result.returncode != 0:
+        logger.error("Profile '%s' failed with exit code %d", result.profile_name, result.returncode)
+        logger.debug("fio stderr: %s", result.stderr.strip())
         raise FioExecutionError(
-            f"fio failed for profile '{result.profile_name}' with exit code {result.returncode}.\n"
-            f"stderr:\n{result.stderr}"
+            f"fio failed for profile '{result.profile_name}' with exit code {result.returncode}"
         )
 
     if not result.json_path.exists():
@@ -155,6 +162,7 @@ def collect_run(pending: PendingRun) -> RunResult:
             f"{result.json_path}"
         )
 
+    logger.info("Profile '%s' completed", result.profile_name)
     return result
 
 
@@ -192,12 +200,14 @@ def run_profiles_concurrently(
     target1 = base_target.with_name(f"{base_target.name}.{profile1.name}.dat")
     target2 = base_target.with_name(f"{base_target.name}.{profile2.name}.dat")
 
+    logger.info("Launching concurrent profiles: '%s' and '%s'", profile1.name, profile2.name)
     pending1 = launch_profile(profile1, target1, output_dir, runtime=runtime, run_id=effective_run_id)
     pending2 = launch_profile(profile2, target2, output_dir, runtime=runtime, run_id=effective_run_id)
 
     try:
         result1 = collect_run(pending1)
     except Exception:
+        logger.debug("Terminating '%s' after sibling failure", pending2.profile_name)
         pending2.process.terminate()
         pending2.process.wait()
         raise

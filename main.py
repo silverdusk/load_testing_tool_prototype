@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -15,10 +16,17 @@ from runner import (
     run_profiles_concurrently
 )
 
+logger = logging.getLogger(__name__)
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line interface."""
     parser = argparse.ArgumentParser(description="Small fio-based load testing tool.")
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable debug-level logging.",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run_parser = subparsers.add_parser("run", help="Run a single fio profile.")
@@ -113,16 +121,22 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(levelname)s: %(message)s",
+        stream=sys.stderr,
+    )
+
     try:
         if args.command == "run":
             return handle_run(args)
         if args.command == "run-concurrent":
             return handle_run_concurrent(args)
     except (ValueError, FioNotFoundError, FioExecutionError, FioParseError) as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        logger.error("%s", exc)
         return 1
 
-    print(f"Unknown command: {args.command}", file=sys.stderr)
+    logger.error("Unknown command: %s", args.command)
     return 1
 
 
