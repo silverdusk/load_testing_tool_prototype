@@ -4,7 +4,7 @@ Small Python prototype that uses `fio` as the load generation engine, captures J
 
 ## Quick start
 
-**Requirements:** Python 3.11+, `fio` in PATH, `pytest` and `ruff` for tests and linting.
+**Requirements:** Python 3.11+, [fio 3.x](https://fio.readthedocs.io/en/latest/) in PATH, `pytest` and `ruff` for tests and linting.
 
 ```bash
 fio --version          # verify fio is available
@@ -30,7 +30,7 @@ python main.py run --profile oltp_like --target ./fio_testfile.dat
 Example output from a concurrent run:
 
 ```
-Profile: streaming-like
+Profile: streaming_like
   Throughput : 1842.57 MiB/s
   IOPS       : 1842.57
   P95        : 8.91 ms
@@ -52,20 +52,21 @@ Combined summary:
 
 ## Profiles
 
-| CLI key | Workload |
-|---------|----------|
-| `oltp_like` | Random mixed read/write, 4K blocks, direct I/O |
-| `streaming_like` | Sequential reads, 1M blocks, multiple jobs |
-| `background_backup` | Sequential writes, 1M blocks, designed to run concurrently |
+| CLI key | Workload | Block size | Jobs | I/O depth | Runtime |
+|---------|----------|------------|------|-----------|---------|
+| `oltp_like` | Random mixed read/write (70/30), direct I/O | 4K | 4 | 16 | 30 s |
+| `streaming_like` | Sequential reads — foreground throughput workload | 1M | 2 | 8 | 30 s |
+| `background_backup` | Sequential writes — background workload, run alongside another profile | 1M | 2 | 8 | 30 s |
 
-Use the CLI key with `--profile`, `--profile1`, and `--profile2`. The job name shown in the report and used in output filenames may differ slightly (e.g. `streaming-like` instead of `streaming_like`).
+All profiles use `posixaio` engine and `group_reporting`. Runtime can be overridden with `--runtime <seconds>`.
+
 
 ## CLI reference
 
 Run one profile with a custom runtime and output directory:
 
 ```bash
-python main.py run --profile streaming_like --target ./fio_testfile.dat --runtime 60 --output-dir ./results
+python main.py run --profile streaming_like --target ./fio_testfile.dat --runtime 5 --output-dir ./results
 ```
 
 Run two profiles concurrently:
@@ -93,7 +94,7 @@ python main.py --verbose run --profile oltp_like --target ./fio_testfile.dat
 Override defaults inline:
 
 ```bash
-make run TARGET=/tmp/test.dat RUNTIME=10
+make run TARGET=/tmp/test.dat RUNTIME=10      # RUNTIME in seconds
 make run-concurrent RESULTS=/tmp/out RUNTIME=60
 ```
 
@@ -116,7 +117,7 @@ python main.py run-concurrent \
 ```
 
 This can produce files such as:
-- `streaming-like_20260418_120000.json`
+- `streaming_like_20260418_120000.json`
 - `background_backup_20260418_120000.json`
 - `summary_20260418_120000.json`
 
@@ -141,5 +142,5 @@ This can produce files such as:
 - `tests/` — unit tests
 
 ## Notes
-- The exact fio JSON structure may vary slightly by fio version.
+- The exact fio JSON structure may vary slightly by fio version. See [fio JSON output docs](https://fio.readthedocs.io/en/latest/fio_doc.html#json-output).
 - This prototype prioritizes clarity and correctness over advanced architecture.

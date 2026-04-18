@@ -29,6 +29,14 @@ class ExitCode(IntEnum):
     PARSE_FAILED = 5
 
 
+_HANDLED_ERRORS: dict[type[Exception], ExitCode] = {
+    ValueError: ExitCode.ARGUMENT_ERROR,
+    FioNotFoundError: ExitCode.FIO_NOT_FOUND,
+    FioExecutionError: ExitCode.FIO_EXECUTION_FAILED,
+    FioParseError: ExitCode.PARSE_FAILED,
+}
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line interface."""
     parser = argparse.ArgumentParser(description="Small fio-based load testing tool.")
@@ -174,18 +182,9 @@ def main() -> ExitCode:
             return handle_run(args)
         if args.command == "run-concurrent":
             return handle_run_concurrent(args)
-    except ValueError as exc:
+    except (ValueError, FioNotFoundError, FioExecutionError, FioParseError) as exc:
         logger.error("%s", exc)
-        return ExitCode.ARGUMENT_ERROR
-    except FioNotFoundError as exc:
-        logger.error("%s", exc)
-        return ExitCode.FIO_NOT_FOUND
-    except FioExecutionError as exc:
-        logger.error("%s", exc)
-        return ExitCode.FIO_EXECUTION_FAILED
-    except FioParseError as exc:
-        logger.error("%s", exc)
-        return ExitCode.PARSE_FAILED
+        return _HANDLED_ERRORS[type(exc)]
     except Exception as exc:
         logger.error("Unexpected error: %s", exc)
         return ExitCode.INTERNAL_ERROR

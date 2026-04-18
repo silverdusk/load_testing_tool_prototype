@@ -53,6 +53,7 @@ def _extract_percentile_ms(io_section: dict[str, Any], percentile_key: str) -> f
     # clat_ns (nanoseconds)  — fio >= 3.x default
     # clat_us (microseconds) — some older builds or non-default configs
     # clat_ms (milliseconds) — rare; included for completeness
+    # https://fio.readthedocs.io/en/latest/fio_doc.html#json-output
     latency_fields = [
         ("clat_ns", 1_000_000.0),
         ("clat_us", 1_000.0),

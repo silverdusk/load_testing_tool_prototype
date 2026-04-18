@@ -56,7 +56,7 @@ class TestHandleRunConcurrent:
 class TestGetProfile:
     def test_returns_known_profile(self) -> None:
         profile = get_profile("oltp_like")
-        assert profile.name == "oltp-like"
+        assert profile.name == "oltp_like"
 
     def test_raises_for_unknown_profile(self) -> None:
         with pytest.raises(ValueError, match="Unknown profile"):

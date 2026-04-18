@@ -172,7 +172,6 @@ def collect_run(pending: PendingRun) -> RunResult:
 
     if returncode != 0:
         stderr_stripped = stderr.strip()
-        logger.error("Profile '%s' failed with exit code %d", pending.profile_name, returncode)
         if stderr_stripped:
             logger.error("fio stderr:\n%s", stderr_stripped)
         raise FioExecutionError(

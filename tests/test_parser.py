@@ -117,7 +117,7 @@ def test_write_summary_json_creates_expected_payload(tmp_path: Path) -> None:
 
     metrics_list = [
         ProfileMetrics(
-            profile_name="streaming-like",
+            profile_name="streaming_like",
             throughput_mib_s=2110.62,
             iops=2110.62,
             p95_ms=9.63,
@@ -135,7 +135,7 @@ def test_write_summary_json_creates_expected_payload(tmp_path: Path) -> None:
     ]
 
     source_json_paths = [
-        Path("streaming-like_20260418_120000.json"),
+        Path("streaming_like_20260418_120000.json"),
         Path("background_backup_20260418_120000.json"),
     ]
 
@@ -149,13 +149,13 @@ def test_write_summary_json_creates_expected_payload(tmp_path: Path) -> None:
     payload = json.loads(output_path.read_text(encoding="utf-8"))
 
     assert payload["mode"] == "concurrent"
-    assert payload["profiles"] == ["streaming-like", "background_backup"]
+    assert payload["profiles"] == ["streaming_like", "background_backup"]
 
     assert payload["combined"]["total_throughput_mib_s"] == 2830.31
     assert payload["combined"]["total_iops"] == 2830.31
 
-    assert payload["per_profile"][0]["profile_name"] == "streaming-like"
-    assert payload["per_profile"][0]["source_json"] == "streaming-like_20260418_120000.json"
+    assert payload["per_profile"][0]["profile_name"] == "streaming_like"
+    assert payload["per_profile"][0]["source_json"] == "streaming_like_20260418_120000.json"
 
     assert payload["per_profile"][1]["profile_name"] == "background_backup"
     assert payload["per_profile"][1]["source_json"] == "background_backup_20260418_120000.json"
