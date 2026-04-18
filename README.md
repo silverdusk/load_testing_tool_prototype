@@ -26,6 +26,25 @@ fio --version
 - `report.py` — report formatting
 - `tests/` — minimal parser tests
 
+## Makefile shortcuts
+
+Common workflows are available via `make`:
+
+| Target | Description |
+|--------|-------------|
+| `make help` | Show available targets and overridable variables |
+| `make test` | Run parser tests with pytest |
+| `make lint` | Lint source files with ruff |
+| `make run` | Run the `oltp_like` profile (30 s, `./fio_testfile.dat`) |
+| `make run-concurrent` | Run `streaming_like` + `background_backup` concurrently |
+
+Override defaults inline:
+
+```bash
+make run TARGET=/tmp/test.dat RUNTIME=10
+make run-concurrent RESULTS=/tmp/out RUNTIME=60
+```
+
 ## Example commands
 
 Run one profile:
@@ -71,7 +90,7 @@ python main.py run-concurrent \
 ```
 
 This can produce files such as:
-- `streaming-like_20260418_120000.json`
+- `streaming_like_20260418_120000.json`
 - `background_backup_20260418_120000.json`
 - `summary_20260418_120000.json`
 
