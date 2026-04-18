@@ -104,6 +104,15 @@ def build_fio_command(
     return command
 
 
+def _terminate_process(pending: PendingRun) -> None:
+    """Terminate a running fio process and wait for it to exit."""
+    try:
+        pending.process.terminate()
+        pending.process.wait()
+    except OSError:
+        pass  # process already exited before terminate() reached it
+
+
 def launch_profile(
     profile: FioProfile,
     target: Path,
@@ -121,12 +130,17 @@ def launch_profile(
     logger.info("Launching fio profile '%s'", profile.name)
     logger.debug("Command: %s", " ".join(command))
 
-    process = subprocess.Popen(
-        command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+    try:
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except OSError as exc:
+        raise FioNotFoundError(
+            f"Failed to start fio for profile '{profile.name}': {exc}"
+        ) from exc
 
     return PendingRun(
         profile_name=profile.name,
@@ -139,31 +153,30 @@ def launch_profile(
 def collect_run(pending: PendingRun) -> RunResult:
     """Wait for a launched fio process and validate its result."""
     stdout, stderr = pending.process.communicate()
+    returncode = pending.process.returncode
 
-    result = RunResult(
+    if returncode != 0:
+        logger.error("Profile '%s' failed with exit code %d", pending.profile_name, returncode)
+        logger.debug("fio stderr: %s", stderr.strip())
+        raise FioExecutionError(
+            f"fio failed for profile '{pending.profile_name}' with exit code {returncode}"
+        )
+
+    if not pending.json_path.exists():
+        raise FioExecutionError(
+            f"fio completed for profile '{pending.profile_name}' but JSON output was not created: "
+            f"{pending.json_path}"
+        )
+
+    logger.info("Profile '%s' completed", pending.profile_name)
+    return RunResult(
         profile_name=pending.profile_name,
         command=pending.command,
-        returncode=pending.process.returncode,
+        returncode=returncode,
         stdout=stdout,
         stderr=stderr,
         json_path=pending.json_path,
     )
-
-    if result.returncode != 0:
-        logger.error("Profile '%s' failed with exit code %d", result.profile_name, result.returncode)
-        logger.debug("fio stderr: %s", result.stderr.strip())
-        raise FioExecutionError(
-            f"fio failed for profile '{result.profile_name}' with exit code {result.returncode}"
-        )
-
-    if not result.json_path.exists():
-        raise FioExecutionError(
-            f"fio completed for profile '{result.profile_name}', but JSON output file was not created: "
-            f"{result.json_path}"
-        )
-
-    logger.info("Profile '%s' completed", result.profile_name)
-    return result
 
 
 def run_profile(
@@ -194,22 +207,26 @@ def run_profiles_concurrently(
     This keeps the example simple and reduces accidental file-level interference.
     """
     ensure_fio_installed()
-    output_dir.mkdir(parents=True, exist_ok=True)
     effective_run_id = run_id or make_run_id()
 
     target1 = base_target.with_name(f"{base_target.name}.{profile1.name}.dat")
     target2 = base_target.with_name(f"{base_target.name}.{profile2.name}.dat")
 
     logger.info("Launching concurrent profiles: '%s' and '%s'", profile1.name, profile2.name)
+
     pending1 = launch_profile(profile1, target1, output_dir, runtime=runtime, run_id=effective_run_id)
-    pending2 = launch_profile(profile2, target2, output_dir, runtime=runtime, run_id=effective_run_id)
+    try:
+        pending2 = launch_profile(profile2, target2, output_dir, runtime=runtime, run_id=effective_run_id)
+    except Exception:
+        logger.debug("Terminating '%s' after failure to launch sibling", pending1.profile_name)
+        _terminate_process(pending1)
+        raise
 
     try:
         result1 = collect_run(pending1)
     except Exception:
         logger.debug("Terminating '%s' after sibling failure", pending2.profile_name)
-        pending2.process.terminate()
-        pending2.process.wait()
+        _terminate_process(pending2)
         raise
 
     result2 = collect_run(pending2)
