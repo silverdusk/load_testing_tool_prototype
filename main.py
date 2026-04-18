@@ -69,15 +69,30 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _validate_common_args(target: Path, output_dir: Path, runtime: int | None) -> None:
+    """Validate arguments shared by both run and run-concurrent."""
+    if runtime is not None and runtime <= 0:
+        raise ValueError(f"--runtime must be a positive integer, got {runtime}")
+    if not target.parent.exists():
+        raise ValueError(f"Target parent directory does not exist: {target.parent}")
+    if target.is_dir():
+        raise ValueError(f"--target must be a file path, not a directory: {target}")
+    if output_dir.exists() and not output_dir.is_dir():
+        raise ValueError(f"--output-dir exists but is not a directory: {output_dir}")
+
+
 def handle_run(args: argparse.Namespace) -> ExitCode:
     """Handle single-profile execution."""
-    profile = get_profile(args.profile)
+    target = Path(args.target)
     output_dir = Path(args.output_dir)
+    _validate_common_args(target, output_dir, args.runtime)
+
+    profile = get_profile(args.profile)
     run_id = make_run_id()
 
     result = run_profile(
         profile=profile,
-        target=Path(args.target),
+        target=target,
         output_dir=output_dir,
         runtime=args.runtime,
         run_id=run_id,
@@ -98,15 +113,24 @@ def handle_run(args: argparse.Namespace) -> ExitCode:
 
 def handle_run_concurrent(args: argparse.Namespace) -> ExitCode:
     """Handle concurrent two-profile execution."""
+    target = Path(args.target)
+    output_dir = Path(args.output_dir)
+    _validate_common_args(target, output_dir, args.runtime)
+
+    if args.profile1 == args.profile2:
+        raise ValueError(
+            f"--profile1 and --profile2 must be different, got '{args.profile1}' for both; "
+            "duplicate profiles would overwrite the same output file"
+        )
+
     profile1 = get_profile(args.profile1)
     profile2 = get_profile(args.profile2)
-    output_dir = Path(args.output_dir)
     run_id = make_run_id()
 
     results = run_profiles_concurrently(
         profile1=profile1,
         profile2=profile2,
-        base_target=Path(args.target),
+        base_target=target,
         output_dir=output_dir,
         runtime=args.runtime,
         run_id=run_id,

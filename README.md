@@ -106,7 +106,7 @@ Reason: percentiles cannot be aggregated correctly from already summarized outpu
 |------|---------|
 | 0 | Success |
 | 1 | Unexpected internal error |
-| 2 | Invalid argument (e.g. unknown profile name) |
+| 2 | Invalid argument (e.g. unknown profile, bad runtime, invalid path) |
 | 3 | fio not found in PATH |
 | 4 | fio process failed (non-zero exit) |
 | 5 | fio JSON output could not be parsed |
