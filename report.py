@@ -39,9 +39,9 @@ def write_summary_json(
             "profile_name": metrics.profile_name,
             "throughput_mib_s": round(metrics.throughput_mib_s, 2),
             "iops": round(metrics.iops, 2),
-            "p95_ms": round(metrics.p95_ms, 2) if metrics.p95_ms is not None else None,
-            "p99_ms": round(metrics.p99_ms, 2) if metrics.p99_ms is not None else None,
-            "runtime_s": round(metrics.runtime_s, 2) if metrics.runtime_s is not None else None,
+            "p95_ms": _round_optional(metrics.p95_ms),
+            "p99_ms": _round_optional(metrics.p99_ms),
+            "runtime_s": _round_optional(metrics.runtime_s),
         }
         if index < len(source_names):
             item["source_json"] = source_names[index]
@@ -65,22 +65,28 @@ def write_summary_json(
     logger.info("Summary JSON written: %s", output_path)
 
 
+def _round_optional(value: float | None, ndigits: int = 2) -> float | None:
+    return round(value, ndigits) if value is not None else None
+
+
 def _format_latency(value: float | None) -> str:
     """Format latency in milliseconds."""
     return f"{value:.2f} ms" if value is not None else "N/A"
 
 
+def _format_runtime(value: float | None) -> str:
+    return f"{value:.1f} s" if value is not None else "N/A"
+
+
 def format_profile_summary(metrics: ProfileMetrics) -> str:
     """Format one profile summary for console output."""
-    runtime = f"{metrics.runtime_s:.1f} s" if metrics.runtime_s is not None else "N/A"
-
     return (
         f"Profile: {metrics.profile_name}\n"
         f"  Throughput : {metrics.throughput_mib_s:.2f} MiB/s\n"
         f"  IOPS       : {metrics.iops:.2f}\n"
         f"  P95        : {_format_latency(metrics.p95_ms)}\n"
         f"  P99        : {_format_latency(metrics.p99_ms)}\n"
-        f"  Runtime    : {runtime}"
+        f"  Runtime    : {_format_runtime(metrics.runtime_s)}"
     )
 
 
@@ -99,9 +105,7 @@ def format_combined_summary(metrics_list: list[ProfileMetrics]) -> str:
         "Combined summary:\n"
         f"  Total throughput : {total_throughput:.2f} MiB/s\n"
         f"  Total IOPS       : {total_iops:.2f}\n"
-        "  Note             : Exact combined P95/P99 are not shown because they cannot be\n"
-        "                     calculated correctly from separate fio JSON summaries alone.\n"
-        "                     Exact aggregation would require histogram-style data such as json+."
+        f"  Note             : {PERCENTILE_NOTE}"
     )
 
 
