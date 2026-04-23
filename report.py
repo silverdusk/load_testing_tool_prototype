@@ -39,8 +39,10 @@ def write_summary_json(
             "profile_name": metrics.profile_name,
             "throughput_mib_s": round(metrics.throughput_mib_s, 2),
             "iops": round(metrics.iops, 2),
-            "p95_ms": _round_optional(metrics.p95_ms),
-            "p99_ms": _round_optional(metrics.p99_ms),
+            "read_p95_ms": _round_optional(metrics.read_p95_ms),
+            "read_p99_ms": _round_optional(metrics.read_p99_ms),
+            "write_p95_ms": _round_optional(metrics.write_p95_ms),
+            "write_p99_ms": _round_optional(metrics.write_p99_ms),
             "runtime_s": _round_optional(metrics.runtime_s),
         }
         if index < len(source_names):
@@ -78,14 +80,25 @@ def _format_runtime(value: float | None) -> str:
     return f"{value:.1f} s" if value is not None else "N/A"
 
 
+def _format_latency_rows(metrics: ProfileMetrics) -> str:
+    """Build per-direction P95/P99 lines, showing only directions that have data."""
+    rows = []
+    if metrics.read_p95_ms is not None or metrics.read_p99_ms is not None:
+        rows.append(f"  Read  P95  : {_format_latency(metrics.read_p95_ms)}")
+        rows.append(f"  Read  P99  : {_format_latency(metrics.read_p99_ms)}")
+    if metrics.write_p95_ms is not None or metrics.write_p99_ms is not None:
+        rows.append(f"  Write P95  : {_format_latency(metrics.write_p95_ms)}")
+        rows.append(f"  Write P99  : {_format_latency(metrics.write_p99_ms)}")
+    return "\n".join(rows) if rows else "  P95/P99    : N/A"
+
+
 def format_profile_summary(metrics: ProfileMetrics) -> str:
     """Format one profile summary for console output."""
     return (
         f"Profile: {metrics.profile_name}\n"
         f"  Throughput : {metrics.throughput_mib_s:.2f} MiB/s\n"
         f"  IOPS       : {metrics.iops:.2f}\n"
-        f"  P95        : {_format_latency(metrics.p95_ms)}\n"
-        f"  P99        : {_format_latency(metrics.p99_ms)}\n"
+        f"{_format_latency_rows(metrics)}\n"
         f"  Runtime    : {_format_runtime(metrics.runtime_s)}"
     )
 

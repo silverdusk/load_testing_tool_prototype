@@ -48,8 +48,10 @@ def test_parse_fio_json_sums_read_and_write(tmp_path: Path) -> None:
     assert metrics.profile_name == "oltp_like"
     assert metrics.throughput_mib_s == 3.0
     assert metrics.iops == 300.0
-    assert metrics.p95_ms == 3.0
-    assert metrics.p99_ms == 5.0
+    assert metrics.read_p95_ms == 2.0
+    assert metrics.read_p99_ms == 4.0
+    assert metrics.write_p95_ms == 3.0
+    assert metrics.write_p99_ms == 5.0
     assert metrics.runtime_s == 30.0
 
 
@@ -82,8 +84,10 @@ def test_parse_fio_json_handles_read_only(tmp_path: Path) -> None:
     assert metrics.profile_name == "streaming_like"
     assert metrics.throughput_mib_s == 4.0
     assert metrics.iops == 32.0
-    assert metrics.p95_ms == 0.5
-    assert metrics.p99_ms == 0.9
+    assert metrics.read_p95_ms == 0.5
+    assert metrics.read_p99_ms == 0.9
+    assert metrics.write_p95_ms is None
+    assert metrics.write_p99_ms is None
     assert metrics.runtime_s == 10.0
 
 
@@ -120,16 +124,20 @@ def test_write_summary_json_creates_expected_payload(tmp_path: Path) -> None:
             profile_name="streaming_like",
             throughput_mib_s=2110.62,
             iops=2110.62,
-            p95_ms=9.63,
-            p99_ms=11.99,
+            read_p95_ms=9.63,
+            read_p99_ms=11.99,
+            write_p95_ms=None,
+            write_p99_ms=None,
             runtime_s=5.0,
         ),
         ProfileMetrics(
             profile_name="background_backup",
             throughput_mib_s=719.69,
             iops=719.69,
-            p95_ms=43.25,
-            p99_ms=90.70,
+            read_p95_ms=None,
+            read_p99_ms=None,
+            write_p95_ms=43.25,
+            write_p99_ms=90.70,
             runtime_s=5.2,
         ),
     ]

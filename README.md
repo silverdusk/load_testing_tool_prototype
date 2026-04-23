@@ -27,27 +27,42 @@ python main.py run --profile oltp_like --target ./fio_testfile.dat
 
 ## Report output
 
+Latency percentiles are shown separately for read and write I/O. Only directions that produced I/O appear in the output.
+
 Example output from a concurrent run:
 
 ```
 Profile: streaming_like
   Throughput : 1842.57 MiB/s
   IOPS       : 1842.57
-  P95        : 8.91 ms
-  P99        : 11.53 ms
+  Read  P95  : 8.91 ms
+  Read  P99  : 11.53 ms
   Runtime    : 30.1 s
 
 Profile: background_backup
   Throughput : 643.21 MiB/s
   IOPS       : 643.21
-  P95        : 47.18 ms
-  P99        : 89.40 ms
+  Write P95  : 47.18 ms
+  Write P99  : 89.40 ms
   Runtime    : 30.2 s
 
 Combined summary:
   Total throughput : 2485.78 MiB/s
   Total IOPS       : 2485.78
   Note             : Exact combined P95/P99 are not shown because they cannot be calculated correctly from separate fio JSON summaries alone. Exact aggregation would require histogram-style data such as json+.
+```
+
+For mixed read/write profiles (e.g. `oltp_like`) both directions are shown:
+
+```
+Profile: oltp_like
+  Throughput : 346.25 MiB/s
+  IOPS       : 88641.02
+  Read  P95  : 2.50 ms
+  Read  P99  : 5.10 ms
+  Write P95  : 3.78 ms
+  Write P99  : 9.63 ms
+  Runtime    : 30.0 s
 ```
 
 ## Profiles

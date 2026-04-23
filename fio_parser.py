@@ -20,8 +20,10 @@ class ProfileMetrics:
     profile_name: str
     throughput_mib_s: float
     iops: float
-    p95_ms: float | None
-    p99_ms: float | None
+    read_p95_ms: float | None
+    read_p99_ms: float | None
+    write_p95_ms: float | None
+    write_p99_ms: float | None
     runtime_s: float | None
 
 
@@ -106,8 +108,10 @@ def parse_fio_json(path: Path) -> ProfileMetrics:
 
     total_bw_kib_s = 0.0
     total_iops = 0.0
-    p95_candidates: list[float | None] = []
-    p99_candidates: list[float | None] = []
+    read_p95_candidates: list[float | None] = []
+    read_p99_candidates: list[float | None] = []
+    write_p95_candidates: list[float | None] = []
+    write_p99_candidates: list[float | None] = []
     runtime_s: float | None = None
     profile_name = str(path.stem)
 
@@ -125,14 +129,14 @@ def parse_fio_json(path: Path) -> ProfileMetrics:
             total_bw_kib_s += _safe_get_number(read_section, "bw")   # fio reports bw in KiB/s
             total_iops += _safe_get_number(read_section, "iops")
             # percentile keys are zero-padded float strings as fio serializes them
-            p95_candidates.append(_extract_percentile_ms(read_section, "95.000000"))
-            p99_candidates.append(_extract_percentile_ms(read_section, "99.000000"))
+            read_p95_candidates.append(_extract_percentile_ms(read_section, "95.000000"))
+            read_p99_candidates.append(_extract_percentile_ms(read_section, "99.000000"))
 
         if isinstance(write_section, dict):
             total_bw_kib_s += _safe_get_number(write_section, "bw")  # fio reports bw in KiB/s
             total_iops += _safe_get_number(write_section, "iops")
-            p95_candidates.append(_extract_percentile_ms(write_section, "95.000000"))
-            p99_candidates.append(_extract_percentile_ms(write_section, "99.000000"))
+            write_p95_candidates.append(_extract_percentile_ms(write_section, "95.000000"))
+            write_p99_candidates.append(_extract_percentile_ms(write_section, "99.000000"))
 
         # runtime is stored per I/O direction in milliseconds; take the max of both directions
         read_runtime_ms = _safe_get_number(read_section, "runtime")
@@ -145,7 +149,9 @@ def parse_fio_json(path: Path) -> ProfileMetrics:
         profile_name=profile_name,
         throughput_mib_s=kib_per_sec_to_mib_per_sec(total_bw_kib_s),
         iops=total_iops,
-        p95_ms=_max_optional(p95_candidates),
-        p99_ms=_max_optional(p99_candidates),
+        read_p95_ms=_max_optional(read_p95_candidates),
+        read_p99_ms=_max_optional(read_p99_candidates),
+        write_p95_ms=_max_optional(write_p95_candidates),
+        write_p99_ms=_max_optional(write_p99_candidates),
         runtime_s=runtime_s,
     )
